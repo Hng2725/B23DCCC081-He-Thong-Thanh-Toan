@@ -1,0 +1,31 @@
+{
+  "name": "bai_tap_api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start:bank": "tsx src/bank.ts",
+    "start:fee": "tsx src/fee-service.ts",
+    "fee": "tsx src/fee-service.ts",
+    "bank": "tsx src/bank.ts",
+    "start": "tsx src/fee-service.ts",
+    "test": "tsx test/run-all-tests.ts",
+    "test:1": "tsx test/test-scenario-1.ts",
+    "test:2": "tsx test/test-scenario-2.ts",
+    "test:3": "tsx test/test-scenario-3.ts",
+    "test:4": "tsx test/test-scenario-4.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

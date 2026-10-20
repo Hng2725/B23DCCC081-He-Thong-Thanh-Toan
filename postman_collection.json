@@ -1,0 +1,486 @@
+{
+  "info": {
+    "_postman_id": "lab3-ptit-api-connection",
+    "name": "LAB 3 - Kết Nối Service và Thanh Toán Học Phí (PTIT)",
+    "description": "Bộ Postman Collection phục vụ kiểm thử bài tập Lab 3: Fee Service (Cổng 4001) và Ngân hàng giả lập (Cổng 4002)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "FEE_URL",
+      "value": "http://localhost:4001",
+      "type": "string"
+    },
+    {
+      "key": "BANK_URL",
+      "value": "http://localhost:4002",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Fee Service (Cổng 4001)",
+      "item": [
+        {
+          "name": "Xem công nợ Sinh viên 1 (50.000.000đ)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{FEE_URL}}/students/1/fees",
+              "host": ["{{FEE_URL}}"],
+              "path": ["students", "1", "fees"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Mã phản hồi là 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Thời gian phản hồi nhanh < 300ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(300);",
+                  "});",
+                  "pm.test('Sinh viên 1 có công nợ', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.studentId).to.eql(1);",
+                  "    pm.expect(json.debt).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Xem công nợ Sinh viên 2 (0đ)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{FEE_URL}}/students/2/fees",
+              "host": ["{{FEE_URL}}"],
+              "path": ["students", "2", "fees"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Mã phản hồi 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Sinh viên 2 nợ 0đ', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.debt).to.eql(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Xem công nợ Sinh viên 3 (3.200.000đ)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{FEE_URL}}/students/3/fees",
+              "host": ["{{FEE_URL}}"],
+              "path": ["students", "3", "fees"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Mã phản hồi 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Sinh viên 3 nợ 3.200.000đ', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.debt).to.eql(3200000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Thanh toán học phí thành công (100.000đ)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100000\n}"
+            },
+            "url": {
+              "raw": "{{FEE_URL}}/students/1/payments",
+              "host": ["{{FEE_URL}}"],
+              "path": ["students", "1", "payments"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Thanh toán thành công trả 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Trạng thái là PAID và có mã thanh toán Px', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('PAID');",
+                  "    pm.expect(json.paymentId).to.match(/^P\\d+/);",
+                  "    pm.expect(json.amount).to.eql(100000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Thanh toán vượt quá công nợ (Kỳ vọng: 400 Bad Request)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 999999999\n}"
+            },
+            "url": {
+              "raw": "{{FEE_URL}}/students/1/payments",
+              "host": ["{{FEE_URL}}"],
+              "path": ["students", "1", "payments"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Bị từ chối mã 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset bộ nhớ Fee Service",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{FEE_URL}}/reset",
+              "host": ["{{FEE_URL}}"],
+              "path": ["reset"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Ngân hàng giả lập (Cổng 4002)",
+      "item": [
+        {
+          "name": "Xem thống kê Ngân hàng (GET /stats)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BANK_URL}}/stats",
+              "host": ["{{BANK_URL}}"],
+              "path": ["stats"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Trả lời 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Cấu trúc thống kê đầy đủ', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('connections');",
+                  "    pm.expect(json).to.have.property('requests');",
+                  "    pm.expect(json).to.have.property('charges');",
+                  "    pm.expect(json).to.have.property('duplicates');",
+                  "    pm.expect(json.duplicates).to.eql(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Trừ tiền trực tiếp kèm Idempotency-Key (POST /charges)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "POSTMAN_TEST_KEY_001"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"POSTMAN_REF_001\",\n  \"amount\": 50000\n}"
+            },
+            "url": {
+              "raw": "{{BANK_URL}}/charges",
+              "host": ["{{BANK_URL}}"],
+              "path": ["charges"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Trừ tiền thành công 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Có chargeId hợp lệ', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('chargeId');",
+                  "    pm.expect(json.status).to.eql('SUCCESS');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Trừ tiền vượt hạn mức 20tr (Kỳ vọng: 402 Payment Required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"TEST_LIMIT_OVER\",\n  \"amount\": 25000000\n}"
+            },
+            "url": {
+              "raw": "{{BANK_URL}}/charges",
+              "host": ["{{BANK_URL}}"],
+              "path": ["charges"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Trả 402 vượt hạn mức', function () {",
+                  "    pm.response.to.have.status(402);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset bộ nhớ Ngân hàng (POST /reset)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BANK_URL}}/reset",
+              "host": ["{{BANK_URL}}"],
+              "path": ["reset"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Kiểm thử 4 Tình huống Sự cố (Scenarios 1-4)",
+      "item": [
+        {
+          "name": "Tình huống 1: Ngân hàng tắt -> Gọi thanh toán (Kỳ vọng 503 FAILED < 1.5s)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100000\n}"
+            },
+            "url": {
+              "raw": "{{FEE_URL}}/students/1/payments",
+              "host": ["{{FEE_URL}}"],
+              "path": ["students", "1", "payments"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Trả về 503 Service Unavailable', function () {",
+                  "    pm.response.to.have.status(503);",
+                  "});",
+                  "pm.test('Thời gian phản hồi nhanh < 1500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1500);",
+                  "});",
+                  "pm.test('Body có error, paymentId và status FAILED', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('FAILED');",
+                  "    pm.expect(json).to.have.property('error');",
+                  "    pm.expect(json).to.have.property('paymentId');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tình huống 2: Ngân hàng trễ 5s -> Gọi thanh toán (Kỳ vọng 504 PENDING <= 4.5s)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100000\n}"
+            },
+            "url": {
+              "raw": "{{FEE_URL}}/students/1/payments",
+              "host": ["{{FEE_URL}}"],
+              "path": ["students", "1", "payments"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Trả về 504 Gateway Timeout', function () {",
+                  "    pm.response.to.have.status(504);",
+                  "});",
+                  "pm.test('Status là PENDING', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('PENDING');",
+                  "});",
+                  "pm.test('Tổng thời gian trả lời <= 4500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(4500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tình huống 2: Khi thanh toán đang trễ -> Xem công nợ (Kỳ vọng 200 OK < 300ms)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{FEE_URL}}/students/1/fees",
+              "host": ["{{FEE_URL}}"],
+              "path": ["students", "1", "fees"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Xem công nợ vẫn 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Thời gian phản hồi siêu nhanh < 300ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(300);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tình huống 4(c): Thanh toán 25tr -> Bị từ chối (Kỳ vọng 402 FAILED không retry)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 25000000\n}"
+            },
+            "url": {
+              "raw": "{{FEE_URL}}/students/1/payments",
+              "host": ["{{FEE_URL}}"],
+              "path": ["students", "1", "payments"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Ngân hàng từ chối trả về 402', function () {",
+                  "    pm.response.to.have.status(402);",
+                  "});",
+                  "pm.test('Trạng thái FAILED', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('FAILED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
